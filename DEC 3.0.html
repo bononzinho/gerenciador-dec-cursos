@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEC - Dashboard Educacional</title>
+<link rel="icon" type="image/jpeg" href="https://cdn.ead.guru/21697/media/public/websites/modelos-modernos-2026/DEC-Logo.jpg">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root { --dec-red: #E31E24; --dec-blue: #1E3A8A; }
+
+  * { font-family: 'Inter', sans-serif; }
+
+  body { background: #f0f2f5; transition: background 0.3s; }
+
+  .sidebar { background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%); transition: all 0.3s ease; }
+
+  .nav-item { transition: all 0.2s ease; border-left: 3px solid transparent; }
+  .nav-item:hover, .nav-item.active { background: rgba(227, 30, 36, 0.1); border-left-color: var(--dec-red); color: white; }
+  .nav-item.active { background: rgba(227, 30, 36, 0.15); }
+
+  .card { background: white; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: transform 0.2s, box-shadow 0.2s; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+
+  .btn-primary { background: linear-gradient(135deg, var(--dec-red), #c41a1f); color: white; transition: all 0.2s; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(227, 30, 36, 0.4); }
+  .btn-secondary { background: linear-gradient(135deg, var(--dec-blue), #152d6e); color: white; transition: all 0.2s; }
+  .btn-secondary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4); }
+
+  .stat-card { position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--dec-red), var(--dec-blue)); }
+
+  .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+
+  .calendar-day { transition: all 0.2s; }
+  .calendar-day:hover { background: rgba(227, 30, 36, 0.1); }
+  .calendar-day.today { background: var(--dec-red); color: white; border-radius: 50%; }
+  .calendar-day.has-birthday { position: relative; }
+  .calendar-day.has-birthday::after { content: '🎂'; position: absolute; bottom: 2px; right: 2px; font-size: 8px; }
+
+  .table-row:hover { background: #f8f9fa; }
+
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .pop-in { animation: popIn 0.25s ease; }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+  .whatsapp-btn { background: #25D366; color: white; transition: all 0.2s; }
+  .whatsapp-btn:hover { background: #128C7E; transform: scale(1.05); }
+
+  .avatar-placeholder { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; font-weight: bold; }
+  .avatar-male { background: linear-gradient(135deg, #1E3A8A, #3B5998); }
+  .avatar-female { background: linear-gradient(135deg, #E31E24, #FF6B6B); }
+
+  .notification-badge { position: absolute; top: -5px; right: -5px; background: var(--dec-red); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+
+  .progress-bar { background: linear-gradient(90deg, var(--dec-red), var(--dec-blue)); border-radius: 4px; transition: width 0.5s ease; }
+
+  @media (max-width: 768px) {
+    .sidebar { position: fixed; left: -280px; top: 0; bottom: 0; z-index: 50; }
+    .sidebar.open { left: 0; }
+  }
+
+  .tab-btn { transition: all 0.2s; border-bottom: 3px solid transparent; }
+  .tab-btn.active { border-bottom-color: var(--dec-red); color: var(--dec-red); font-weight: 600; }
+
+  .input-field { border: 2px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; transition: all 0.2s; width: 100%; background: white; }
+  .input-field:focus { outline: none; border-color: var(--dec-blue); box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1); }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+
+  .theme-btn { transition: all 0.2s; }
+  .theme-btn.selected { outline: 3px solid var(--dec-red); outline-offset: 2px; }
+
+  /* ===== TEMA DARK ===== */
+  body.theme-dark { background: #0f172a; }
+  body.theme-dark .bg-white { background-color: #1e293b !important; }
+  body.theme-dark .bg-gray-50 { background-color: #273449 !important; }
+  body.theme-dark .bg-gray-100 { background-color: #334155 !important; }
+  body.theme-dark .text-gray-800 { color: #f1f5f9 !important; }
+  body.theme-dark .text-gray-700 { color: #e2e8f0 !important; }
+  body.theme-dark .text-gray-600 { color: #cbd5e1 !important; }
+  body.theme-dark .text-gray-500 { color: #94a3b8 !important; }
+  body.theme-dark .text-gray-400 { color: #94a3b8 !important; }
+  body.theme-dark .border-gray-200, body.theme-dark .border-gray-100 { border-color: #334155 !important; }
+  body.theme-dark .card { background: #1e293b; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+  body.theme-dark .input-field { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+  body.theme-dark .table-row:hover { background: #273449; }
+  body.theme-dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
+  body.theme-dark .hover\:bg-gray-50:hover { background-color: #273449 !important; }
+  body.theme-dark #pagResults { background: #1e293b; border-color: #334155; }
+  body.theme-dark .border-gray-300 { border-color: #334155 !important; }
+
+  /* ===== TEMA SÉPIA ===== */
+  body.theme-sepia { background: #e8dcc0; }
+  body.theme-sepia .bg-white { background-color: #f7efdd !important; }
+  body.theme-sepia .bg-gray-50 { background-color: #efe5cd !important; }
+  body.theme-sepia .bg-gray-100 { background-color: #e7dcc2 !important; }
+  body.theme-sepia .text-gray-800 { color: #4a3b2a !important; }
+  body.theme-sepia .text-gray-700 { color: #5b4a35 !important; }
+  body.theme-sepia .text-gray-600 { color: #6b5a43 !important; }
+  body.theme-sepia .text-gray-500 { color: #8a7a5f !important; }
+  body.theme-sepia .text-gray-400 { color: #8a7a5f !important; }
+  body.theme-sepia .border-gray-200, body.theme-sepia .border-gray-100 { border-color: #d8c9a8 !important; }
+  body.theme-sepia .card { background: #f7efdd; box-shadow: 0 2px 12px rgba(90,70,40,0.12); }
+  body.theme-sepia .input-field { background: #fbf6e9; border-color: #d8c9a8; color: #4a3b2a; }
+  body.theme-sepia .table-row:hover { background: #efe5cd; }
+  body.theme-sepia .hover\:bg-gray-100:hover { background-color: #e7dcc2 !important; }
+  body.theme-sepia .hover\:bg-gray-50:hover { background-color: #efe5cd !important; }
+  body.theme-sepia #pagResults { background: #f7efdd; border-color: #d8c9a8; }
+  body.theme-sepia .border-gray-300 { border-color: #d8c9a8 !important; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="flex min-h-screen">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar w-64 text-gray-300 flex-shrink-0 flex flex-col">
+    <div class="p-6 border-b border-gray-700">
+      <div class="flex items-center gap-3">
+        <img src="https://cdn.ead.guru/21697/media/public/websites/modelos-modernos-2026/DEC-Logo.jpg" alt="DEC Logo" class="w-12 h-12 rounded-xl object-cover bg-white">
+        <div>
+          <h1 class="text-white font-bold text-lg">DEC</h1>
+          <p class="text-xs text-gray-400">Inglês • Espanhol</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex-1 py-4 overflow-y-auto scrollbar-thin">
+      <div class="px-4 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Menu Principal</div>
+      <a href="#" class="nav-item active flex items-center gap-3 px-6 py-3 text-sm" data-section="dashboard" onclick="showSection('dashboard')"><i class="fas fa-chart-pie w-5"></i> Dashboard</a>
+      <a href="#" class="nav-item flex items-center gap-3 px-6 py-3 text-sm" data-section="alunos" onclick="showSection('alunos')"><i class="fas fa-user-graduate w-5"></i> Alunos</a>
+      <a href="#" class="nav-item flex items-center gap-3 px-6 py-3 text-sm" data-section="pagamentos" onclick="showSection('pagamentos')"><i class="fas fa-money-bill-wave w-5"></i> Pagamentos</a>
+      <a href="#" class="nav-item flex items-center gap-3 px-6 py-3 text-sm" data-section="financeiro" onclick="showSection('financeiro')"><i class="fas fa-chart-line w-5"></i> Financeiro</a>
+      <a href="#" class="nav-item flex items-center gap-3 px-6 py-3 text-sm" data-section="calendario" onclick="showSection('calendario')"><i class="fas fa-calendar-alt w-5"></i> Calendário</a>
+      <a href="#" class="nav-item flex items-center gap-3 px-6 py-3 text-sm" data-section="presenca" onclick="showSection('presenca')"><i class="fas fa-clipboard-check w-5"></i> Presença</a>
+      <div class="px-4 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sistema</div>
+      <a href="#" class="nav-item flex items-center gap-3 px-6 py-3 text-sm" data-section="config" onclick="showSection('config')"><i class="fas fa-cog w-5"></i> Configurações</a>
+    </nav>
+
+    <div class="p-4 border-t border-gray-700">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background: linear-gradient(135deg, #E31E24, #1E3A8A);">AD</div>
+        <div>
+          <p class="text-white text-sm font-medium">Admin</p>
+          <p class="text-xs text-gray-400">v3.0 / 2026</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+    <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden text-gray-600" onclick="toggleSidebar()"><i class="fas fa-bars text-xl"></i></button>
+        <div>
+          <h2 id="pageTitle" class="text-xl font-bold text-gray-800">Dashboard</h2>
+          <p id="pageSubtitle" class="text-sm text-gray-500">Visão geral do sistema</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <button class="relative p-2 text-gray-600 hover:text-gray-800" onclick="toggleNotifications()">
+            <i class="fas fa-bell text-xl"></i>
+            <span id="notifBadge" class="notification-badge hidden">0</span>
+          </button>
+          <div id="notifPanel" class="hidden absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 p-4">
+            <h3 class="font-bold text-gray-800 mb-3">🔔 Notificações</h3>
+            <div id="notifList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+          </div>
+        </div>
+        <div class="text-right hidden sm:block">
+          <p class="text-sm font-medium text-gray-800" id="currentDate"></p>
+          <p class="text-xs text-gray-500" id="currentTime"></p>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6 scrollbar-thin">
+
+      <!-- DASHBOARD -->
+      <section id="section-dashboard" class="section active fade-in">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="card stat-card p-5">
+            <div class="flex items-center justify-between mb-3"><div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center"><i class="fas fa-user-graduate text-red-600 text-xl"></i></div></div>
+            <p class="text-2xl font-bold text-gray-800" id="statTotalAlunos">0</p>
+            <p class="text-sm text-gray-500">Total de Alunos</p>
+          </div>
+          <div class="card stat-card p-5">
+            <div class="flex items-center justify-between mb-3"><div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center"><i class="fas fa-wallet text-blue-600 text-xl"></i></div></div>
+            <p class="text-2xl font-bold text-gray-800" id="statSaldo">R$ 0,00</p>
+            <p class="text-sm text-gray-500">Saldo Atual</p>
+          </div>
+          <div class="card stat-card p-5">
+            <div class="flex items-center justify-between mb-3"><div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center"><i class="fas fa-check-circle text-green-600 text-xl"></i></div></div>
+            <p class="text-2xl font-bold text-gray-800" id="statPagamentos">0</p>
+            <p class="text-sm text-gray-500">Pagamentos este Mês</p>
+          </div>
+          <div class="card stat-card p-5">
+            <div class="flex items-center justify-between mb-3"><div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center"><i class="fas fa-birthday-cake text-purple-600 text-xl"></i></div></div>
+            <p class="text-2xl font-bold text-gray-800" id="statAniversarios">0</p>
+            <p class="text-sm text-gray-500">Aniversários este Mês</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="card p-6"><h3 class="font-bold text-gray-800 mb-4">Receitas vs Despesas</h3><canvas id="chartReceitasDespesas" height="200"></canvas></div>
+          <div class="card p-6"><h3 class="font-bold text-gray-800 mb-4">Alunos por Turma</h3><canvas id="chartTurmas" height="200"></canvas></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card p-6"><h3 class="font-bold text-gray-800 mb-4">Próximos Aniversários</h3><div id="upcomingBirthdays" class="space-y-3"></div></div>
+          <div class="card p-6"><h3 class="font-bold text-gray-800 mb-4">Últimos Pagamentos</h3><div id="recentPayments" class="space-y-3"></div></div>
+        </div>
+      </section>
+
+      <!-- ALUNOS -->
+      <section id="section-alunos" class="section fade-in">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div class="flex gap-2 flex-wrap w-full sm:w-auto">
+            <select id="searchTipo" class="input-field w-36" onchange="renderAlunos()">
+              <option value="todos">Buscar: Todos</option>
+              <option value="nome">Nome</option>
+              <option value="cpf">CPF</option>
+              <option value="telefone">Telefone</option>
+            </select>
+            <input type="text" id="searchAluno" placeholder="Buscar aluno..." class="input-field flex-1 sm:w-64" oninput="renderAlunos()">
+            <select id="filterTurma" class="input-field w-40" onchange="renderAlunos()"><option value="">Todas Turmas</option></select>
+          </div>
+          <button class="btn-primary px-5 py-2.5 rounded-xl font-medium flex items-center gap-2" onclick="openModalAluno()"><i class="fas fa-plus"></i> Novo Aluno</button>
+        </div>
+
+        <div class="card overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aluno</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">CPF</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Turma</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Turno</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Telefone</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="alunosTableBody"></tbody>
+            </table>
+          </div>
+          <div id="alunosEmpty" class="hidden p-12 text-center text-gray-400">
+            <i class="fas fa-user-graduate text-5xl mb-4"></i>
+            <p class="text-lg font-medium">Nenhum aluno encontrado</p>
+            <p class="text-sm">Clique em "Novo Aluno" para começar</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGAMENTOS -->
+      <section id="section-pagamentos" class="section fade-in">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <select id="selectAlunoPagamento" class="input-field w-64" onchange="renderPagamentos()"><option value="">Todos os Alunos</option></select>
+          <button class="btn-primary px-5 py-2.5 rounded-xl font-medium flex items-center gap-2" onclick="openModalPagamento()"><i class="fas fa-plus"></i> Registrar Pagamento</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div class="card p-5"><p class="text-sm text-gray-500">Total Pago</p><p class="text-2xl font-bold text-green-600" id="pagTotalPago">R$ 0,00</p></div>
+          <div class="card p-5"><p class="text-sm text-gray-500">Pendente</p><p class="text-2xl font-bold text-red-600" id="pagPendente">R$ 0,00</p></div>
+          <div class="card p-5"><p class="text-sm text-gray-500">Último Pagamento</p><p class="text-lg font-bold text-gray-800" id="pagUltimo">-</p></div>
+        </div>
+
+        <div class="card overflow-hidden">
+          <div class="p-4 border-b border-gray-200"><h3 class="font-bold text-gray-800">Histórico de Pagamentos</h3></div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aluno</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Data</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Valor</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Referência</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="pagamentosTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- FINANCEIRO -->
+      <section id="section-financeiro" class="section fade-in">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div class="card stat-card p-5"><p class="text-sm text-gray-500 mb-1">Saldo Atual</p><p class="text-3xl font-bold text-gray-800" id="finSaldo">R$ 0,00</p></div>
+          <div class="card p-5 border-l-4 border-green-500"><p class="text-sm text-gray-500 mb-1">Total Entradas</p><p class="text-2xl font-bold text-green-600" id="finEntradas">R$ 0,00</p></div>
+          <div class="card p-5 border-l-4 border-red-500"><p class="text-sm text-gray-500 mb-1">Total Saídas</p><p class="text-2xl font-bold text-red-600" id="finSaidas">R$ 0,00</p></div>
+        </div>
+
+        <div class="flex gap-2 mb-4 flex-wrap">
+          <button class="tab-btn active px-4 py-2 text-sm" onclick="switchFinTab('mensal', this)">Mensal</button>
+          <button class="tab-btn px-4 py-2 text-sm" onclick="switchFinTab('anual', this)">Anual</button>
+          <button class="btn-secondary px-4 py-2 rounded-lg text-sm ml-auto" onclick="openModalDespesa()"><i class="fas fa-minus"></i> Nova Despesa</button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="card p-6"><h3 class="font-bold text-gray-800 mb-4" id="finChartTitle">Receitas vs Despesas (Mensal)</h3><canvas id="chartFinanceiro" height="250"></canvas></div>
+          <div class="card p-6"><h3 class="font-bold text-gray-800 mb-4">Distribuição de Despesas</h3><canvas id="chartDistribuicao" height="250"></canvas></div>
+        </div>
+
+        <div class="card overflow-hidden">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="font-bold text-gray-800">Movimentações</h3>
+            <div class="flex gap-3">
+              <button class="text-sm text-red-600 hover:underline" onclick="exportRelatorioPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+              <button class="text-sm text-green-600 hover:underline" onclick="exportRelatorioExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Data</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Descrição</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tipo</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Valor</th>
+                </tr>
+              </thead>
+              <tbody id="movimentacoesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- CALENDARIO -->
+      <section id="section-calendario" class="section fade-in">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 card p-6">
+            <div class="flex items-center justify-between mb-6">
+              <button class="p-2 hover:bg-gray-100 rounded-lg" onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+              <h3 class="text-lg font-bold text-gray-800" id="calendarMonth"></h3>
+              <button class="p-2 hover:bg-gray-100 rounded-lg" onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="grid grid-cols-7 gap-1 mb-2">
+              <div class="text-center text-xs font-semibold text-gray-500 py-2">Dom</div>
+              <div class="text-center text-xs font-semibold text-gray-500 py-2">Seg</div>
+              <div class="text-center text-xs font-semibold text-gray-500 py-2">Ter</div>
+              <div class="text-center text-xs font-semibold text-gray-500 py-2">Qua</div>
+              <div class="text-center text-xs font-semibold text-gray-500 py-2">Qui</div>
+              <div class="text-center text-xs font-semibold text-gray-500 py-2">Sex</div>
+              <div class="text-center text-xs font-semibold text-gray-500 py-2">Sáb</div>
+            </div>
+            <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="card p-5">
+              <h3 class="font-bold text-gray-800 mb-3">🎂 Aniversariantes do Mês</h3>
+              <div id="birthdayList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+            </div>
+            <div class="card p-5">
+              <h3 class="font-bold text-gray-800 mb-3">🔔 Alertas</h3>
+              <div id="alertList" class="space-y-2 max-h-48 overflow-y-auto"></div>
+              <button class="btn-primary w-full mt-3 py-2 rounded-lg text-sm" onclick="openModalAlerta()"><i class="fas fa-plus"></i> Novo Alerta</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRESENCA -->
+      <section id="section-presenca" class="section fade-in">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div class="flex gap-2 flex-wrap">
+            <select id="presencaTurma" class="input-field w-40" onchange="renderPresenca()"><option value="">Todas Turmas</option></select>
+            <input type="date" id="presencaData" class="input-field w-40" onchange="renderPresenca()">
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button class="btn-primary px-4 py-2 rounded-lg text-sm" onclick="salvarPresenca()"><i class="fas fa-save"></i> Salvar</button>
+            <button class="btn-secondary px-4 py-2 rounded-lg text-sm" onclick="exportPresencaPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+            <button class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700" onclick="exportPresencaExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div class="card p-5"><p class="text-sm text-gray-500">Presentes</p><p class="text-2xl font-bold text-green-600" id="presPresentes">0</p></div>
+          <div class="card p-5"><p class="text-sm text-gray-500">Faltosos</p><p class="text-2xl font-bold text-red-600" id="presFaltosos">0</p></div>
+          <div class="card p-5"><p class="text-sm text-gray-500">Frequência</p><p class="text-2xl font-bold text-blue-600" id="presFrequencia">0%</p></div>
+        </div>
+
+        <div class="card overflow-hidden mb-6">
+          <div class="p-4 border-b border-gray-200"><h3 class="font-bold text-gray-800">Ata de Presença</h3></div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aluno</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Turma</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Presente</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Faltou</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Observação</th>
+                </tr>
+              </thead>
+              <tbody id="presencaTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card p-6">
+          <h3 class="font-bold text-gray-800 mb-4">Relatório de Frequência por Período</h3>
+          <div class="flex gap-2 mb-4 flex-wrap">
+            <input type="date" id="relInicio" class="input-field w-40">
+            <input type="date" id="relFim" class="input-field w-40">
+            <select id="relTurma" class="input-field w-40"><option value="">Todas Turmas</option></select>
+            <button class="btn-primary px-4 py-2 rounded-lg text-sm" onclick="gerarRelatorioFrequencia()"><i class="fas fa-search"></i> Gerar</button>
+          </div>
+          <div id="relatorioFrequencia" class="space-y-2"></div>
+        </div>
+      </section>
+
+      <!-- CONFIG -->
+      <section id="section-config" class="section fade-in">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card p-6">
+            <h3 class="font-bold text-gray-800 mb-1"><i class="fas fa-palette text-red-600"></i> Temas</h3>
+            <p class="text-sm text-gray-500 mb-4">Escolha o tema de sua preferência para o dashboard.</p>
+            <div class="grid grid-cols-3 gap-3">
+              <button id="theme-light" class="theme-btn card p-4 flex flex-col items-center gap-2" onclick="setTheme('light')">
+                <div class="w-full h-10 rounded-lg border border-gray-200" style="background: linear-gradient(135deg, #ffffff 50%, #f0f2f5 50%);"></div>
+                <span class="text-sm font-medium text-gray-800">Light</span>
+              </button>
+              <button id="theme-sepia" class="theme-btn card p-4 flex flex-col items-center gap-2" onclick="setTheme('sepia')">
+                <div class="w-full h-10 rounded-lg border border-gray-200" style="background: linear-gradient(135deg, #f7efdd 50%, #e8dcc0 50%);"></div>
+                <span class="text-sm font-medium text-gray-800">Sépia</span>
+              </button>
+              <button id="theme-dark" class="theme-btn card p-4 flex flex-col items-center gap-2" onclick="setTheme('dark')">
+                <div class="w-full h-10 rounded-lg border border-gray-200" style="background: linear-gradient(135deg, #1e293b 50%, #0f172a 50%);"></div>
+                <span class="text-sm font-medium text-gray-800">Dark</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card p-6">
+            <h3 class="font-bold text-gray-800 mb-1"><i class="fas fa-database text-blue-600"></i> Dados do Sistema</h3>
+            <p class="text-sm text-gray-500 mb-4">Gerencie backup e restauração dos dados do dashboard.</p>
+            <div class="space-y-3">
+              <button class="btn-secondary w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2" onclick="exportBackup()"><i class="fas fa-download"></i> Backup JSON</button>
+              <button class="btn-primary w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2" onclick="document.getElementById('importFile').click()"><i class="fas fa-upload"></i> Importar Dados</button>
+              <input type="file" id="importFile" accept=".json" class="hidden" onchange="importBackup(event)">
+              <button class="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 bg-red-600 text-white hover:bg-red-700" onclick="apagarTudo()"><i class="fas fa-trash-alt"></i> Apagar Tudo</button>
+            </div>
+          </div>
+
+          <div class="card p-6 lg:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <img src="https://cdn.ead.guru/21697/media/public/websites/modelos-modernos-2026/DEC-Logo.jpg" alt="DEC" class="w-16 h-16 rounded-xl object-cover">
+              <div>
+                <p class="font-bold text-gray-800">DEC - Dashboard Educacional</p>
+                <p class="text-sm text-gray-500">Inglês • Espanhol • Português</p>
+              </div>
+            </div>
+            <button class="btn-secondary px-6 py-3 rounded-xl font-medium flex items-center gap-2" onclick="openModal('modalSobre')"><i class="fas fa-info-circle"></i> Sobre</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Aluno -->
+<div id="modalAluno" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl pop-in">
+    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+      <h3 class="text-lg font-bold text-gray-800" id="modalAlunoTitle">Novo Aluno</h3>
+      <button class="text-gray-400 hover:text-gray-600" onclick="closeModal('modalAluno')"><i class="fas fa-times text-xl"></i></button>
+    </div>
+    <div class="p-6">
+      <div class="flex justify-center mb-6">
+        <div class="relative">
+          <div id="avatarPreview" class="avatar-placeholder avatar-male"><i class="fas fa-user"></i></div>
+          <label class="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-blue-700">
+            <i class="fas fa-camera text-xs"></i>
+            <input type="file" accept="image/*" class="hidden" onchange="previewAvatar(event)">
+          </label>
+        </div>
+      </div>
+      <input type="hidden" id="alunoId">
+      <input type="hidden" id="alunoFoto">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div><label class="block text-sm font-medium text-gray-700 mb-1">Nome *</label><input type="text" id="alunoNome" class="input-field" required></div>
+        <div><label class="block text-sm font-medium text-gray-700 mb-1">Sobrenome *</label><input type="text" id="alunoSobrenome" class="input-field" required></div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Gênero *</label>
+          <select id="alunoGenero" class="input-field" required onchange="updateAvatarPlaceholder()">
+            <option value="">Selecione</option>
+            <option value="M">Masculino</option>
+            <option value="F">Feminino</option>
+          </select>
+        </div>
+        <div><label class="block text-sm font-medium text-gray-700 mb-1">CPF *</label><input type="text" id="alunoCPF" class="input-field" placeholder="000.000.000-00" oninput="maskCPF(this)" required></div>
+        <div><label class="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label><input type="date" id="alunoNascimento" class="input-field"></div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Turno *</label>
+          <select id="alunoTurno" class="input-field" required>
+            <option value="">Selecione</option>
+            <option value="Manhã">Manhã</option>
+            <option value="Tarde">Tarde</option>
+            <option value="Noite">Noite</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Turma *</label>
+          <select id="alunoTurma" class="input-field" required>
+            <option value="">Selecione</option>
+            <optgroup label="Inglês">
+              <option value="Inglês A1">Inglês A1</option>
+              <option value="Inglês A2">Inglês A2</option>
+              <option value="Inglês B1">Inglês B1</option>
+              <option value="Inglês B2">Inglês B2</option>
+            </optgroup>
+            <optgroup label="Espanhol">
+              <option value="Espanhol A1">Espanhol A1</option>
+              <option value="Espanhol A2">Espanhol A2</option>
+              <option value="Espanhol B1">Espanhol B1</option>
+              <option value="Espanhol B2">Espanhol B2</option>
+            </optgroup>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Telefone *</label>
+          <div class="flex gap-2">
+            <input type="text" id="alunoTelefone" class="input-field flex-1" placeholder="(00) 00000-0000" oninput="maskPhone(this)" required>
+            <a id="whatsappLink" href="#" target="_blank" class="whatsapp-btn px-3 rounded-lg flex items-center" style="pointer-events:none;opacity:0.5;"><i class="fab fa-whatsapp"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
+      <button class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50" onclick="closeModal('modalAluno')">Cancelar</button>
+      <button class="btn-primary px-5 py-2.5 rounded-xl font-medium" onclick="salvarAluno()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Pagamento -->
+<div id="modalPagamento" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl pop-in">
+    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+      <h3 class="text-lg font-bold text-gray-800">Registrar Pagamento</h3>
+      <button class="text-gray-400 hover:text-gray-600" onclick="closeModal('modalPagamento')"><i class="fas fa-times text-xl"></i></button>
+    </div>
+    <div class="p-6 space-y-4">
+      <input type="hidden" id="pagAlunoId">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Aluno *</label>
+        <div id="pagSelectedChip" class="hidden mb-2 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+          <span id="pagSelectedName" class="text-sm font-medium text-blue-800"></span>
+          <button class="text-red-500 hover:text-red-700" onclick="clearPagAluno()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-3.5 text-gray-400 text-sm"></i>
+          <input type="text" id="pagSearch" class="input-field pl-9" placeholder="Buscar aluno por nome, CPF, telefone ou turma..." oninput="filterPagAlunos()" onfocus="filterPagAlunos()">
+        </div>
+        <div id="pagResults" class="hidden border border-gray-200 rounded-lg max-h-44 overflow-y-auto mt-1 bg-white shadow-lg"></div>
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Valor *</label><input type="number" id="pagValor" class="input-field" step="0.01" min="0" required></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Data *</label><input type="date" id="pagData" class="input-field" required></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Referência</label><input type="text" id="pagReferencia" class="input-field" placeholder="Ex: Mensalidade Janeiro"></div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+        <select id="pagStatus" class="input-field">
+          <option value="pago">Pago</option>
+          <option value="pendente">Pendente</option>
+        </select>
+      </div>
+    </div>
+    <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
+      <button class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50" onclick="closeModal('modalPagamento')">Cancelar</button>
+      <button class="btn-primary px-5 py-2.5 rounded-xl font-medium" onclick="salvarPagamento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Despesa -->
+<div id="modalDespesa" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl pop-in">
+    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+      <h3 class="text-lg font-bold text-gray-800">Nova Despesa</h3>
+      <button class="text-gray-400 hover:text-gray-600" onclick="closeModal('modalDespesa')"><i class="fas fa-times text-xl"></i></button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Descrição *</label><input type="text" id="despDescricao" class="input-field" required></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Valor *</label><input type="number" id="despValor" class="input-field" step="0.01" min="0" required></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Data *</label><input type="date" id="despData" class="input-field" required></div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+        <select id="despCategoria" class="input-field">
+          <option value="Aluguel">Aluguel</option>
+          <option value="Material">Material</option>
+          <option value="Salário">Salário</option>
+          <option value="Utilidades">Utilidades</option>
+          <option value="Outros">Outros</option>
+        </select>
+      </div>
+    </div>
+    <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
+      <button class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50" onclick="closeModal('modalDespesa')">Cancelar</button>
+      <button class="btn-secondary px-5 py-2.5 rounded-xl font-medium" onclick="salvarDespesa()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Alerta -->
+<div id="modalAlerta" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl pop-in">
+    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+      <h3 class="text-lg font-bold text-gray-800">Novo Alerta</h3>
+      <button class="text-gray-400 hover:text-gray-600" onclick="closeModal('modalAlerta')"><i class="fas fa-times text-xl"></i></button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Título *</label><input type="text" id="alertTitulo" class="input-field" placeholder="Ex: Prova de Inglês" required></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="block text-sm font-medium text-gray-700 mb-1">Data *</label><input type="date" id="alertData" class="input-field" required></div>
+        <div><label class="block text-sm font-medium text-gray-700 mb-1">Hora *</label><input type="time" id="alertHora" class="input-field" required></div>
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label><textarea id="alertDescricao" class="input-field" rows="3" placeholder="Detalhes do alerta..."></textarea></div>
+      <p class="text-xs text-gray-500 bg-blue-50 border border-blue-200 rounded-lg p-3"><i class="fas fa-info-circle text-blue-600"></i> Este alerta será notificado no sininho 🔔 no dia e hora marcados.</p>
+    </div>
+    <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
+      <button class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50" onclick="closeModal('modalAlerta')">Cancelar</button>
+      <button class="btn-primary px-5 py-2.5 rounded-xl font-medium" onclick="salvarAlerta()">Salvar Alerta</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Confirm (pop-up interno) -->
+<div id="modalConfirm" class="hidden fixed inset-0 modal-overlay z-[70] flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 text-center pop-in">
+    <div id="confirmIconWrap" class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
+      <i id="confirmIcon" class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+    </div>
+    <h3 id="confirmTitle" class="text-lg font-bold text-gray-800 mb-2"></h3>
+    <p id="confirmMsg" class="text-sm text-gray-600 mb-6"></p>
+    <div class="flex justify-center gap-3">
+      <button class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50" onclick="closeConfirm(false)">Cancelar</button>
+      <button id="confirmOkBtn" class="px-5 py-2.5 rounded-xl font-medium text-white bg-red-600 hover:bg-red-700" onclick="closeConfirm(true)">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Sobre -->
+<div id="modalSobre" class="hidden fixed inset-0 modal-overlay z-[70] flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl pop-in overflow-hidden">
+    <div class="p-4 flex justify-end" style="background: linear-gradient(135deg, #E31E24, #1E3A8A);">
+      <button class="text-white hover:text-gray-200 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center" onclick="closeModal('modalSobre')" title="Fechar"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-8 pt-4 text-center -mt-6">
+      <img src="https://cdn.ead.guru/21697/media/public/websites/modelos-modernos-2026/DEC-Logo.jpg" alt="DEC" class="w-24 h-24 rounded-2xl object-cover mx-auto shadow-lg border-4 border-white">
+      <h3 class="text-xl font-bold text-gray-800 mt-4">Sobre o Dashboard</h3>
+      <p class="text-sm text-gray-600 mt-4 leading-relaxed">Este é um Dashboard criado por <strong class="text-red-600">BononCreator</strong> para a instituição de Ensino <strong class="text-blue-800">DEC Cursos</strong> para uma melhor organização.</p>
+      <p class="text-xs text-gray-500 mt-3 bg-gray-50 rounded-lg py-2 px-3 inline-block">Versão do Dashboard <strong>3.0 / 2026</strong></p>
+      <button class="btn-primary w-full mt-6 py-3 rounded-xl font-medium" onclick="closeModal('modalSobre')"><i class="fas fa-check"></i> Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-6 right-6 z-[80] hidden">
+  <div class="bg-gray-800 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3">
+    <i id="toastIcon" class="fas fa-check-circle text-green-400"></i>
+    <span id="toastMsg">Operação realizada com sucesso!</span>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+let data = { alunos: [], pagamentos: [], despesas: [], presenca: [], alertas: [] };
+let currentCalendarDate = new Date();
+let currentFinTab = 'mensal';
+let chartInstances = {};
+let notifiedAlerts = new Set();
+let confirmCallback = null;
+
+function init() {
+  loadData();
+  applySavedTheme();
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+  document.getElementById('presencaData').value = todayStr();
+  document.getElementById('pagData').value = todayStr();
+  document.getElementById('despData').value = todayStr();
+  document.getElementById('alunoTelefone').addEventListener('input', updateWhatsAppLink);
+  renderAll();
+}
+
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+
+function loadData() {
+  const saved = localStorage.getItem('dec_data');
+  if (saved) { data = JSON.parse(saved); }
+  else {
+    data = {
+      alunos: [
+        { id: 1, nome: 'Maria', sobrenome: 'Silva', genero: 'F', cpf: '123.456.789-00', nascimento: '1995-03-15', turno: 'Manhã', turma: 'Inglês A1', telefone: '(11) 99999-1234', foto: null },
+        { id: 2, nome: 'João', sobrenome: 'Santos', genero: 'M', cpf: '987.654.321-00', nascimento: '1998-07-22', turno: 'Noite', turma: 'Espanhol A1', telefone: '(11) 98888-5678', foto: null },
+        { id: 3, nome: 'Ana', sobrenome: 'Oliveira', genero: 'F', cpf: '456.789.123-00', nascimento: '2000-12-01', turno: 'Tarde', turma: 'Inglês B2', telefone: '(11) 97777-9012', foto: null }
+      ],
+      pagamentos: [
+        { id: 1, alunoId: 1, valor: 350, data: '2025-01-10', referencia: 'Mensalidade Janeiro', status: 'pago' },
+        { id: 2, alunoId: 2, valor: 350, data: '2025-01-15', referencia: 'Mensalidade Janeiro', status: 'pago' },
+        { id: 3, alunoId: 3, valor: 350, data: '2025-02-10', referencia: 'Mensalidade Fevereiro', status: 'pendente' }
+      ],
+      despesas: [
+        { id: 1, descricao: 'Aluguel Sala', valor: 1500, data: '2025-01-05', categoria: 'Aluguel' },
+        { id: 2, descricao: 'Material Didático', valor: 300, data: '2025-01-20', categoria: 'Material' }
+      ],
+      presenca: [],
+      alertas: []
+    };
+    saveData();
+  }
+}
+
+function saveData() { localStorage.setItem('dec_data', JSON.stringify(data)); }
+
+function updateDateTime() {
+  const now = new Date();
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  document.getElementById('currentDate').textContent = now.toLocaleDateString('pt-BR', options);
+  document.getElementById('currentTime').textContent = now.toLocaleTimeString('pt-BR');
+  // Notificação em tempo real dos alertas (dia + hora)
+  data.alertas.forEach(a => {
+    if (!a.hora || !a.data) return;
+    const dt = new Date(a.data + 'T' + a.hora);
+    if (now >= dt && (now - dt) < 60000 && !notifiedAlerts.has(a.id)) {
+      notifiedAlerts.add(a.id);
+      showToast('🔔 Alerta: ' + a.titulo);
+    }
+  });
+}
+
+// ===== POP-UP DE CONFIRMAÇÃO (interno) =====
+function showConfirm(title, msg, onConfirm, opts) {
+  opts = opts || {};
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  confirmCallback = onConfirm;
+  const ok = document.getElementById('confirmOkBtn');
+  ok.textContent = opts.okText || 'Confirmar';
+  ok.className = 'px-5 py-2.5 rounded-xl font-medium text-white ' + (opts.okClass || 'bg-red-600 hover:bg-red-700');
+  const iconWrap = document.getElementById('confirmIconWrap');
+  const icon = document.getElementById('confirmIcon');
+  iconWrap.className = 'w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ' + (opts.iconBg || 'bg-red-100');
+  icon.className = 'fas text-2xl ' + (opts.iconClass || 'fa-exclamation-triangle text-red-600');
+  openModal('modalConfirm');
+}
+
+function closeConfirm(result) {
+  closeModal('modalConfirm');
+  if (result && confirmCallback) { const cb = confirmCallback; confirmCallback = null; cb(); }
+  else confirmCallback = null;
+}
+
+// ===== THEMES =====
+function applySavedTheme() { setTheme(localStorage.getItem('dec_theme') || 'light', true); }
+
+function setTheme(theme, silent) {
+  document.body.classList.remove('theme-light', 'theme-dark', 'theme-sepia');
+  if (theme !== 'light') document.body.classList.add('theme-' + theme);
+  localStorage.setItem('dec_theme', theme);
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById('theme-' + theme);
+  if (btn) btn.classList.add('selected');
+  Chart.defaults.color = theme === 'dark' ? '#cbd5e1' : '#6b7280';
+  renderAll();
+  if (!silent) showToast('Tema ' + (theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'Sépia') + ' aplicado!');
+}
+
+// ===== NAV =====
+function showSection(section) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-' + section).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const nav = document.querySelector('.nav-item[data-section="' + section + '"]');
+  if (nav) nav.classList.add('active');
+  const titles = {
+    dashboard: ['Dashboard', 'Visão geral do sistema'],
+    alunos: ['Alunos', 'Gerenciamento de alunos'],
+    pagamentos: ['Pagamentos', 'Controle de pagamentos'],
+    financeiro: ['Financeiro', 'Gerenciamento financeiro'],
+    calendario: ['Calendário', 'Eventos e aniversários'],
+    presenca: ['Presença', 'Ata de presença'],
+    config: ['Configurações', 'Temas, backup e dados']
+  };
+  document.getElementById('pageTitle').textContent = titles[section][0];
+  document.getElementById('pageSubtitle').textContent = titles[section][1];
+  if (section === 'dashboard') renderDashboard();
+  if (section === 'financeiro') renderFinanceiro();
+  if (section === 'calendario') renderCalendar();
+  if (section === 'presenca') renderPresenca();
+  if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// ===== AVATAR =====
+function updateAvatarPlaceholder() {
+  const genero = document.getElementById('alunoGenero').value;
+  const preview = document.getElementById('avatarPreview');
+  if (genero === 'M') { preview.className = 'avatar-placeholder avatar-male'; preview.innerHTML = '<i class="fas fa-user"></i>'; }
+  else if (genero === 'F') { preview.className = 'avatar-placeholder avatar-female'; preview.innerHTML = '<i class="fas fa-user"></i>'; }
+  else { preview.className = 'avatar-placeholder bg-gray-400'; preview.innerHTML = '<i class="fas fa-user"></i>'; }
+}
+
+function previewAvatar(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('alunoFoto').value = e.target.result;
+      document.getElementById('avatarPreview').innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover rounded-full">';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function getAvatar(aluno) {
+  if (aluno.foto) return '<img src="' + aluno.foto + '" class="w-10 h-10 rounded-full object-cover">';
+  const cls = aluno.genero === 'F' ? 'avatar-female' : 'avatar-male';
+  return '<div class="w-10 h-10 rounded-full ' + cls + ' flex items-center justify-center text-white text-sm font-bold">' + (aluno.nome[0] || '') + (aluno.sobrenome[0] || '') + '</div>';
+}
+
+// ===== MASKS =====
+function maskCPF(input) {
+  let v = input.value.replace(/\D/g, '');
+  v = v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  input.value = v;
+}
+function maskPhone(input) {
+  let v = input.value.replace(/\D/g, '');
+  v = v.replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
+  input.value = v;
+}
+function onlyDigits(s) { return (s || '').replace(/\D/g, ''); }
+
+function updateWhatsAppLink() {
+  const phone = onlyDigits(document.getElementById('alunoTelefone').value);
+  const link = document.getElementById('whatsappLink');
+  if (phone.length >= 10) { link.href = 'https://wa.me/55' + phone; link.style.pointerEvents = 'auto'; link.style.opacity = '1'; }
+  else { link.href = '#'; link.style.pointerEvents = 'none'; link.style.opacity = '0.5'; }
+}
+
+// ===== ALUNOS =====
+function openModalAluno(id) {
+  document.getElementById('modalAlunoTitle').textContent = id ? 'Editar Aluno' : 'Novo Aluno';
+  if (id) {
+    const a = data.alunos.find(x => x.id === id);
+    document.getElementById('alunoId').value = a.id;
+    document.getElementById('alunoNome').value = a.nome;
+    document.getElementById('alunoSobrenome').value = a.sobrenome;
+    document.getElementById('alunoGenero').value = a.genero;
+    document.getElementById('alunoCPF').value = a.cpf;
+    document.getElementById('alunoNascimento').value = a.nascimento || '';
+    document.getElementById('alunoTurno').value = a.turno;
+    document.getElementById('alunoTurma').value = a.turma;
+    document.getElementById('alunoTelefone').value = a.telefone;
+    document.getElementById('alunoFoto').value = a.foto || '';
+    updateAvatarPlaceholder();
+    if (a.foto) document.getElementById('avatarPreview').innerHTML = '<img src="' + a.foto + '" class="w-full h-full object-cover rounded-full">';
+  } else {
+    ['alunoId','alunoNome','alunoSobrenome','alunoCPF','alunoNascimento','alunoTelefone'].forEach(f => document.getElementById(f).value = '');
+    document.getElementById('alunoGenero').value = '';
+    document.getElementById('alunoTurno').value = '';
+    document.getElementById('alunoTurma').value = '';
+    document.getElementById('alunoFoto').value = '';
+    updateAvatarPlaceholder();
+  }
+  updateWhatsAppLink();
+  openModal('modalAluno');
+}
+
+function salvarAluno() {
+  const nome = document.getElementById('alunoNome').value.trim();
+  const sobrenome = document.getElementById('alunoSobrenome').value.trim();
+  const genero = document.getElementById('alunoGenero').value;
+  const cpf = document.getElementById('alunoCPF').value.trim();
+  const turno = document.getElementById('alunoTurno').value;
+  const turma = document.getElementById('alunoTurma').value;
+  const telefone = document.getElementById('alunoTelefone').value.trim();
+  if (!nome || !sobrenome || !genero || !cpf || !turno || !turma || !telefone) { showToast('Preencha todos os campos obrigatórios!', 'error'); return; }
+  const alunoData = { nome, sobrenome, genero, cpf, nascimento: document.getElementById('alunoNascimento').value, turno, turma, telefone, foto: document.getElementById('alunoFoto').value || null };
+  const id = document.getElementById('alunoId').value;
+  if (id) {
+    const idx = data.alunos.findIndex(a => a.id === parseInt(id));
+    data.alunos[idx] = Object.assign({}, data.alunos[idx], alunoData);
+    showToast('Aluno atualizado com sucesso!');
+  } else {
+    alunoData.id = Date.now();
+    data.alunos.push(alunoData);
+    showToast('Aluno cadastrado com sucesso!');
+  }
+  saveData(); closeModal('modalAluno'); renderAll();
+}
+
+function deleteAluno(id) {
+  const a = data.alunos.find(x => x.id === id);
+  showConfirm('Excluir Aluno', 'Deseja realmente excluir ' + (a ? a.nome + ' ' + a.sobrenome : 'este aluno') + '? Todos os pagamentos e presenças vinculados também serão removidos.', function() {
+    data.alunos = data.alunos.filter(x => x.id !== id);
+    data.pagamentos = data.pagamentos.filter(p => p.alunoId !== id);
+    data.presenca = data.presenca.filter(p => p.alunoId !== id);
+    saveData(); renderAll(); showToast('Aluno excluído!');
+  });
+}
+
+function renderAlunos() {
+  const tipo = document.getElementById('searchTipo').value;
+  const search = document.getElementById('searchAluno').value.trim();
+  const filterTurma = document.getElementById('filterTurma').value;
+
+  const turmas = [...new Set(data.alunos.map(a => a.turma))];
+  const filterSelect = document.getElementById('filterTurma');
+  filterSelect.innerHTML = '<option value="">Todas Turmas</option>' + turmas.map(t => '<option value="' + t + '">' + t + '</option>').join('');
+  filterSelect.value = turmas.includes(filterTurma) ? filterTurma : '';
+
+  let filtered = data.alunos.filter(a => {
+    let matchSearch = true;
+    if (search) {
+      if (tipo === 'cpf') matchSearch = onlyDigits(a.cpf).includes(onlyDigits(search));
+      else if (tipo === 'telefone') matchSearch = onlyDigits(a.telefone).includes(onlyDigits(search));
+      else if (tipo === 'nome') matchSearch = (a.nome + ' ' + a.sobrenome).toLowerCase().includes(search.toLowerCase());
+      else matchSearch = (a.nome + ' ' + a.sobrenome).toLowerCase().includes(search.toLowerCase()) || (onlyDigits(search).length > 0 && (onlyDigits(a.cpf).includes(onlyDigits(search)) || onlyDigits(a.telefone).includes(onlyDigits(search))));
+    }
+    const matchTurma = !filterSelect.value || a.turma === filterSelect.value;
+    return matchSearch && matchTurma;
+  });
+
+  const tbody = document.getElementById('alunosTableBody');
+  const empty = document.getElementById('alunosEmpty');
+  if (filtered.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  tbody.innerHTML = filtered.map(a => '<tr class="table-row border-b border-gray-100">' +
+    '<td class="px-4 py-3"><div class="flex items-center gap-3">' + getAvatar(a) + '<div><p class="font-medium text-gray-800">' + a.nome + ' ' + a.sobrenome + '</p><p class="text-xs text-gray-500">' + (a.genero === 'F' ? 'Feminino' : 'Masculino') + '</p></div></div></td>' +
+    '<td class="px-4 py-3 text-sm text-gray-600">' + a.cpf + '</td>' +
+    '<td class="px-4 py-3"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">' + a.turma + '</span></td>' +
+    '<td class="px-4 py-3 text-sm text-gray-600">' + a.turno + '</td>' +
+    '<td class="px-4 py-3"><div class="flex items-center gap-2"><span class="text-sm text-gray-600">' + a.telefone + '</span><a href="https://wa.me/55' + onlyDigits(a.telefone) + '" target="_blank" class="whatsapp-btn w-8 h-8 rounded-full flex items-center justify-center text-xs"><i class="fab fa-whatsapp"></i></a></div></td>' +
+    '<td class="px-4 py-3"><div class="flex gap-2"><button class="text-blue-600 hover:text-blue-800" onclick="openModalAluno(' + a.id + ')"><i class="fas fa-edit"></i></button><button class="text-red-600 hover:text-red-800" onclick="deleteAluno(' + a.id + ')"><i class="fas fa-trash"></i></button></div></td>' +
+    '</tr>').join('');
+}
+
+// ===== PAGAMENTOS =====
+function openModalPagamento() {
+  document.getElementById('pagAlunoId').value = '';
+  document.getElementById('pagSearch').value = '';
+  document.getElementById('pagResults').classList.add('hidden');
+  document.getElementById('pagSelectedChip').classList.add('hidden');
+  document.getElementById('pagValor').value = '';
+  document.getElementById('pagReferencia').value = '';
+  document.getElementById('pagStatus').value = 'pago';
+  document.getElementById('pagData').value = todayStr();
+  openModal('modalPagamento');
+}
+
+function filterPagAlunos() {
+  const q = document.getElementById('pagSearch').value.trim().toLowerCase();
+  const box = document.getElementById('pagResults');
+  const results = data.alunos.filter(a => {
+    if (!q) return true;
+    return (a.nome + ' ' + a.sobrenome).toLowerCase().includes(q) || (onlyDigits(q).length > 0 && (onlyDigits(a.cpf).includes(onlyDigits(q)) || onlyDigits(a.telefone).includes(onlyDigits(q)))) || a.turma.toLowerCase().includes(q);
+  }).slice(0, 8);
+  if (results.length === 0) box.innerHTML = '<p class="p-3 text-sm text-gray-400 text-center">Nenhum aluno encontrado</p>';
+  else box.innerHTML = results.map(a => '<div class="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0" onclick="selectPagAluno(' + a.id + ')">' + getAvatar(a) + '<div><p class="text-sm font-medium text-gray-800">' + a.nome + ' ' + a.sobrenome + '</p><p class="text-xs text-gray-500">' + a.turma + ' • ' + a.turno + '</p></div></div>').join('');
+  box.classList.remove('hidden');
+}
+
+function selectPagAluno(id) {
+  const a = data.alunos.find(x => x.id === id);
+  document.getElementById('pagAlunoId').value = id;
+  document.getElementById('pagSelectedName').textContent = '👤 ' + a.nome + ' ' + a.sobrenome + ' (' + a.turma + ')';
+  document.getElementById('pagSelectedChip').classList.remove('hidden');
+  document.getElementById('pagResults').classList.add('hidden');
+  document.getElementById('pagSearch').value = '';
+}
+
+function clearPagAluno() {
+  document.getElementById('pagAlunoId').value = '';
+  document.getElementById('pagSelectedChip').classList.add('hidden');
+}
+
+function salvarPagamento() {
+  const alunoId = parseInt(document.getElementById('pagAlunoId').value);
+  const valor = parseFloat(document.getElementById('pagValor').value);
+  const dataPag = document.getElementById('pagData').value;
+  const referencia = document.getElementById('pagReferencia').value;
+  const status = document.getElementById('pagStatus').value;
+  if (!alunoId) { showToast('Busque e selecione um aluno!', 'error'); return; }
+  if (!valor || !dataPag) { showToast('Preencha valor e data!', 'error'); return; }
+  data.pagamentos.push({ id: Date.now(), alunoId, valor, data: dataPag, referencia, status });
+  saveData(); closeModal('modalPagamento'); renderAll(); showToast('Pagamento registrado!');
+}
+
+function deletePagamento(id) {
+  showConfirm('Excluir Pagamento', 'Deseja realmente excluir este registro de pagamento?', function() {
+    data.pagamentos = data.pagamentos.filter(p => p.id !== id);
+    saveData(); renderAll(); showToast('Pagamento excluído!');
+  });
+}
+
+function confirmarPagamento(id) {
+  const pag = data.pagamentos.find(p => p.id === id);
+  if (pag) { pag.status = 'pago'; saveData(); renderAll(); showToast('Pagamento confirmado! Baixa realizada.'); }
+}
+
+function renderPagamentos() {
+  const select = document.getElementById('selectAlunoPagamento');
+  const currentVal = select.value;
+  select.innerHTML = '<option value="">Todos os Alunos</option>' + data.alunos.map(a => '<option value="' + a.id + '">' + a.nome + ' ' + a.sobrenome + '</option>').join('');
+  select.value = currentVal;
+  const alunoFilter = select.value;
+
+  let filtered = data.pagamentos;
+  if (alunoFilter) filtered = filtered.filter(p => p.alunoId === parseInt(alunoFilter));
+
+  const totalPago = filtered.filter(p => p.status === 'pago').reduce((s, p) => s + p.valor, 0);
+  const totalPendente = filtered.filter(p => p.status === 'pendente').reduce((s, p) => s + p.valor, 0);
+  const sorted = [...filtered].sort((a, b) => b.data.localeCompare(a.data));
+  document.getElementById('pagTotalPago').textContent = formatCurrency(totalPago);
+  document.getElementById('pagPendente').textContent = formatCurrency(totalPendente);
+  document.getElementById('pagUltimo').textContent = sorted[0] ? formatDate(sorted[0].data) : '-';
+
+  document.getElementById('pagamentosTableBody').innerHTML = sorted.map(p => {
+    const aluno = data.alunos.find(a => a.id === p.alunoId);
+    return '<tr class="table-row border-b border-gray-100">' +
+      '<td class="px-4 py-3 text-sm font-medium text-gray-800">' + (aluno ? aluno.nome + ' ' + aluno.sobrenome : '-') + '</td>' +
+      '<td class="px-4 py-3 text-sm text-gray-600">' + formatDate(p.data) + '</td>' +
+      '<td class="px-4 py-3 text-sm font-bold text-gray-800">' + formatCurrency(p.valor) + '</td>' +
+      '<td class="px-4 py-3 text-sm text-gray-600">' + (p.referencia || '-') + '</td>' +
+      '<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-medium ' + (p.status === 'pago' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700') + '">' + (p.status === 'pago' ? 'Pago' : 'Pendente') + '</span></td>' +
+      '<td class="px-4 py-3"><div class="flex gap-2">' + (p.status === 'pendente' ? '<button class="text-green-600 hover:text-green-800" onclick="confirmarPagamento(' + p.id + ')" title="Dar baixa"><i class="fas fa-check-circle"></i></button>' : '') + '<button class="text-red-600 hover:text-red-800" onclick="deletePagamento(' + p.id + ')"><i class="fas fa-trash"></i></button></div></td>' +
+      '</tr>';
+  }).join('');
+}
+
+// ===== FINANCEIRO =====
+function salvarDespesa() {
+  const descricao = document.getElementById('despDescricao').value.trim();
+  const valor = parseFloat(document.getElementById('despValor').value);
+  const dataDesp = document.getElementById('despData').value;
+  const categoria = document.getElementById('despCategoria').value;
+  if (!descricao || !valor || !dataDesp) { showToast('Preencha os campos obrigatórios!', 'error'); return; }
+  data.despesas.push({ id: Date.now(), descricao, valor, data: dataDesp, categoria });
+  saveData(); closeModal('modalDespesa'); renderFinanceiro(); showToast('Despesa registrada!');
+}
+
+function renderFinanceiro() {
+  const totalEntradas = data.pagamentos.filter(p => p.status === 'pago').reduce((s, p) => s + p.valor, 0);
+  const totalSaidas = data.despesas.reduce((s, d) => s + d.valor, 0);
+  document.getElementById('finSaldo').textContent = formatCurrency(totalEntradas - totalSaidas);
+  document.getElementById('finEntradas').textContent = formatCurrency(totalEntradas);
+  document.getElementById('finSaidas').textContent = formatCurrency(totalSaidas);
+  renderFinChart(); renderDistribuicaoChart(); renderMovimentacoes();
+}
+
+function switchFinTab(tab, btn) {
+  currentFinTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFinChart();
+}
+
+function chartGridColor() { return document.body.classList.contains('theme-dark') ? '#334155' : '#e5e7eb'; }
+
+function renderFinChart() {
+  const ctx = document.getElementById('chartFinanceiro').getContext('2d');
+  if (chartInstances.fin) chartInstances.fin.destroy();
+  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const year = new Date().getFullYear();
+  let labels, entradas, saidas;
+  if (currentFinTab === 'mensal') {
+    labels = months;
+    entradas = months.map((_, i) => data.pagamentos.filter(p => p.status === 'pago' && p.data.startsWith(year + '-' + String(i + 1).padStart(2, '0'))).reduce((s, p) => s + p.valor, 0));
+    saidas = months.map((_, i) => data.despesas.filter(d => d.data.startsWith(year + '-' + String(i + 1).padStart(2, '0'))).reduce((s, d) => s + d.valor, 0));
+    document.getElementById('finChartTitle').textContent = 'Receitas vs Despesas (Mensal)';
+  } else {
+    labels = [year - 2, year - 1, year];
+    entradas = labels.map(y => data.pagamentos.filter(p => p.status === 'pago' && p.data.startsWith(String(y))).reduce((s, p) => s + p.valor, 0));
+    saidas = labels.map(y => data.despesas.filter(d => d.data.startsWith(String(y))).reduce((s, d) => s + d.valor, 0));
+    document.getElementById('finChartTitle').textContent = 'Receitas vs Despesas (Anual)';
+  }
+  chartInstances.fin = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'Entradas', data: entradas, backgroundColor: '#10B981', borderRadius: 6 },
+      { label: 'Saídas', data: saidas, backgroundColor: '#E31E24', borderRadius: 6 }
+    ]},
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, grid: { color: chartGridColor() }, ticks: { callback: v => 'R$ ' + v } } } }
+  });
+}
+
+function renderDistribuicaoChart() {
+  const ctx = document.getElementById('chartDistribuicao').getContext('2d');
+  if (chartInstances.dist) chartInstances.dist.destroy();
+  const categorias = {};
+  data.despesas.forEach(d => { categorias[d.categoria] = (categorias[d.categoria] || 0) + d.valor; });
+  chartInstances.dist = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: Object.keys(categorias), datasets: [{ data: Object.values(categorias), backgroundColor: ['#E31E24', '#1E3A8A', '#10B981', '#F59E0B', '#8B5CF6'] }] },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+function renderMovimentacoes() {
+  const all = [
+    ...data.pagamentos.filter(p => p.status === 'pago').map(p => {
+      const aluno = data.alunos.find(a => a.id === p.alunoId);
+      return { data: p.data, descricao: 'Pagamento - ' + (aluno ? aluno.nome + ' ' + aluno.sobrenome : '') + (p.referencia ? ' (' + p.referencia + ')' : ''), tipo: 'entrada', valor: p.valor };
+    }),
+    ...data.despesas.map(d => ({ data: d.data, descricao: d.descricao, tipo: 'saida', valor: d.valor }))
+  ].sort((a, b) => b.data.localeCompare(a.data));
+  document.getElementById('movimentacoesTableBody').innerHTML = all.map(m => '<tr class="table-row border-b border-gray-100">' +
+    '<td class="px-4 py-3 text-sm text-gray-600">' + formatDate(m.data) + '</td>' +
+    '<td class="px-4 py-3 text-sm text-gray-800">' + m.descricao + '</td>' +
+    '<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-medium ' + (m.tipo === 'entrada' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700') + '">' + (m.tipo === 'entrada' ? 'Entrada' : 'Saída') + '</span></td>' +
+    '<td class="px-4 py-3 text-sm font-bold ' + (m.tipo === 'entrada' ? 'text-green-600' : 'text-red-600') + '">' + (m.tipo === 'entrada' ? '+' : '-') + ' ' + formatCurrency(m.valor) + '</td></tr>').join('');
+}
+
+// ===== CALENDARIO =====
+function renderCalendar() {
+  const year = currentCalendarDate.getFullYear();
+  const month = currentCalendarDate.getMonth();
+  const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  document.getElementById('calendarMonth').textContent = monthNames[month] + ' ' + year;
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+
+  const birthdayDays = data.alunos.filter(a => a.nascimento && new Date(a.nascimento + 'T00:00:00').getMonth() === month).map(a => new Date(a.nascimento + 'T00:00:00').getDate());
+
+  const grid = document.getElementById('calendarGrid');
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div></div>';
+  for (let day = 1; day <= daysInMonth; day++) {
+    const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+    const hasBirthday = birthdayDays.includes(day);
+    html += '<div class="calendar-day ' + (isToday ? 'today ' : '') + (hasBirthday ? 'has-birthday ' : '') + 'p-2 text-center text-sm cursor-pointer rounded-lg hover:bg-gray-100" onclick="showDayInfo(' + day + ')">' + day + '</div>';
+  }
+  grid.innerHTML = html;
+
+  const monthBirthdays = data.alunos.filter(a => a.nascimento && new Date(a.nascimento + 'T00:00:00').getMonth() === month)
+    .sort((a, b) => new Date(a.nascimento + 'T00:00:00').getDate() - new Date(b.nascimento + 'T00:00:00').getDate());
+
+  document.getElementById('birthdayList').innerHTML = monthBirthdays.length ? monthBirthdays.map(a => {
+    const d = new Date(a.nascimento + 'T00:00:00');
+    const idade = year - d.getFullYear();
+    return '<div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">' + getAvatar(a) +
+      '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-gray-800 truncate">' + a.nome + ' ' + a.sobrenome + '</p><p class="text-xs text-gray-500">Dia ' + d.getDate() + ' • ' + idade + ' anos • ' + a.turma + '</p></div><span class="text-lg">🎂</span></div>';
+  }).join('') : '<p class="text-sm text-gray-400 text-center py-4">Nenhum aniversariante em ' + monthNames[month] + '</p>';
+
+  const alerts = [...data.alertas].sort((a, b) => (a.data + (a.hora || '')).localeCompare(b.data + (b.hora || '')));
+  document.getElementById('alertList').innerHTML = alerts.length ? alerts.map(a => '<div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">' +
+    '<div class="flex justify-between items-start"><p class="text-sm font-medium text-gray-800">' + a.titulo + '</p><button class="text-red-500 text-xs" onclick="deleteAlerta(' + a.id + ')"><i class="fas fa-times"></i></button></div>' +
+    '<p class="text-xs text-gray-600 font-medium"><i class="far fa-clock"></i> ' + formatDate(a.data) + ' às ' + (a.hora || '--:--') + '</p>' +
+    (a.descricao ? '<p class="text-xs text-gray-600 mt-1">' + a.descricao + '</p>' : '') + '</div>').join('') : '<p class="text-sm text-gray-400 text-center py-4">Nenhum alerta cadastrado</p>';
+
+  updateNotifications();
+}
+
+function changeMonth(delta) { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta); renderCalendar(); }
+
+function showDayInfo(day) {
+  const month = currentCalendarDate.getMonth();
+  const birthdays = data.alunos.filter(a => {
+    if (!a.nascimento) return false;
+    const d = new Date(a.nascimento + 'T00:00:00');
+    return d.getMonth() === month && d.getDate() === day;
+  });
+  if (birthdays.length) showToast('🎂 Aniversariantes do dia ' + day + ': ' + birthdays.map(a => a.nome).join(', '));
+}
+
+// ===== ALERTAS (corrigido) =====
+function openModalAlerta() {
+  document.getElementById('alertTitulo').value = '';
+  document.getElementById('alertData').value = '';
+  document.getElementById('alertHora').value = '';
+  document.getElementById('alertDescricao').value = '';
+  openModal('modalAlerta');
+}
+
+function salvarAlerta() {
+  const titulo = document.getElementById('alertTitulo').value.trim();
+  const dataAlerta = document.getElementById('alertData').value;
+  const hora = document.getElementById('alertHora').value;
+  const descricao = document.getElementById('alertDescricao').value.trim();
+  if (!titulo || !dataAlerta || !hora) { showToast('Preencha título, data e hora do alerta!', 'error'); return; }
+  data.alertas.push({ id: Date.now(), titulo, data: dataAlerta, hora, descricao });
+  saveData(); closeModal('modalAlerta'); renderCalendar(); updateNotifications();
+  showToast('Alerta criado! Ele será notificado no sininho 🔔 no dia e hora marcados.');
+}
+
+function deleteAlerta(id) {
+  showConfirm('Excluir Alerta', 'Deseja realmente excluir este alerta?', function() {
+    data.alertas = data.alertas.filter(a => a.id !== id);
+    saveData(); renderCalendar(); showToast('Alerta excluído!');
+  }, { okClass: 'bg-red-600 hover:bg-red-700' });
+}
+
+// ===== NOTIFICAÇÕES (sininho) =====
+function getNotifications() {
+  const items = [];
+  const now = new Date();
+
+  // 1) Alunos com pagamentos pendentes
+  const pendentes = data.pagamentos.filter(p => p.status === 'pendente');
+  if (pendentes.length > 0) {
+    const nomes = pendentes.map(p => { const a = data.alunos.find(x => x.id === p.alunoId); return a ? a.nome + ' ' + a.sobrenome : 'Aluno'; });
+    items.push({
+      icon: 'fa-money-bill-wave', color: 'bg-yellow-100 text-yellow-600',
+      title: pendentes.length + ' aluno(s) com pagamento pendente',
+      desc: nomes.join(', ')
+    });
+  }
+
+  // 2) Aniversariantes do mês (notificação única)
+  const month = now.getMonth();
+  const anivs = data.alunos.filter(a => a.nascimento && new Date(a.nascimento + 'T00:00:00').getMonth() === month);
+  if (anivs.length > 0) {
+    items.push({
+      icon: 'fa-birthday-cake', color: 'bg-red-100 text-red-600',
+      title: '🎂 ' + anivs.length + ' aluno(s) aniversariante(s) neste mês!',
+      desc: 'Confira as datas no Calendário.'
+    });
+  }
+
+  // 3) Alertas cadastrados (com data e hora)
+  [...data.alertas].sort((a, b) => (a.data + (a.hora || '')).localeCompare(b.data + (b.hora || ''))).forEach(a => {
+    if (!a.data) return;
+    const dt = new Date(a.data + 'T' + (a.hora || '09:00'));
+    const diffH = (dt - now) / 3600000;
+    if (diffH >= -12) {
+      const isNow = dt <= now;
+      items.push({
+        icon: isNow ? 'fa-bell' : 'fa-clock', color: isNow ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600',
+        title: a.titulo,
+        desc: formatDate(a.data) + ' às ' + (a.hora || '--:--') + (isNow ? ' • Agora!' : '')
+      });
+    }
+  });
+
+  return items;
+}
+
+function updateNotifications() {
+  const items = getNotifications();
+  const badge = document.getElementById('notifBadge');
+  const list = document.getElementById('notifList');
+  if (items.length > 0) {
+    badge.textContent = items.length;
+    badge.classList.remove('hidden');
+    list.innerHTML = items.map(i => '<div class="flex items-start gap-3 p-2 bg-gray-50 rounded-lg">' +
+      '<div class="w-9 h-9 rounded-full ' + i.color + ' flex items-center justify-center flex-shrink-0"><i class="fas ' + i.icon + ' text-sm"></i></div>' +
+      '<div class="min-w-0"><p class="text-sm font-medium text-gray-800">' + i.title + '</p><p class="text-xs text-gray-500">' + i.desc + '</p></div></div>').join('');
+  } else {
+    badge.classList.add('hidden');
+    list.innerHTML = '<p class="text-sm text-gray-400 text-center py-2">Nenhuma notificação</p>';
+  }
+}
+
+function toggleNotifications() { document.getElementById('notifPanel').classList.toggle('hidden'); updateNotifications(); }
+
+// ===== PRESENCA =====
+function renderPresenca() {
+  const turmas = [...new Set(data.alunos.map(a => a.turma))];
+  const select = document.getElementById('presencaTurma');
+  const cur = select.value;
+  select.innerHTML = '<option value="">Todas Turmas</option>' + turmas.map(t => '<option value="' + t + '">' + t + '</option>').join('');
+  select.value = turmas.includes(cur) ? cur : '';
+  document.getElementById('relTurma').innerHTML = '<option value="">Todas Turmas</option>' + turmas.map(t => '<option value="' + t + '">' + t + '</option>').join('');
+
+  const dataPresenca = document.getElementById('presencaData').value;
+  let filtered = data.alunos;
+  if (select.value) filtered = filtered.filter(a => a.turma === select.value);
+
+  let presentes = 0, faltosos = 0;
+  document.getElementById('presencaTableBody').innerHTML = filtered.map(a => {
+    const reg = data.presenca.find(p => p.alunoId === a.id && p.data === dataPresenca);
+    const status = reg ? reg.status : null;
+    if (status === 'presente') presentes++;
+    else if (status === 'faltou') faltosos++;
+    return '<tr class="table-row border-b border-gray-100">' +
+      '<td class="px-4 py-3"><div class="flex items-center gap-3">' + getAvatar(a) + '<span class="text-sm font-medium text-gray-800">' + a.nome + ' ' + a.sobrenome + '</span></div></td>' +
+      '<td class="px-4 py-3 text-sm text-gray-600">' + a.turma + '</td>' +
+      '<td class="px-4 py-3 text-center"><button onclick="setPresenca(' + a.id + ', \'presente\')" class="w-10 h-10 rounded-full ' + (status === 'presente' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400') + ' hover:bg-green-500 hover:text-white transition-all"><i class="fas fa-check"></i></button></td>' +
+      '<td class="px-4 py-3 text-center"><button onclick="setPresenca(' + a.id + ', \'faltou\')" class="w-10 h-10 rounded-full ' + (status === 'faltou' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-400') + ' hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-times"></i></button></td>' +
+      '<td class="px-4 py-3"><input type="text" class="input-field text-sm py-1" placeholder="Obs..." id="obs-' + a.id + '" value="' + (reg && reg.obs ? reg.obs : '') + '"></td></tr>';
+  }).join('');
+
+  const total = presentes + faltosos;
+  document.getElementById('presPresentes').textContent = presentes;
+  document.getElementById('presFaltosos').textContent = faltosos;
+  document.getElementById('presFrequencia').textContent = (total > 0 ? Math.round((presentes / total) * 100) : 0) + '%';
+}
+
+function setPresenca(alunoId, status) {
+  const dataPresenca = document.getElementById('presencaData').value;
+  const existing = data.presenca.find(p => p.alunoId === alunoId && p.data === dataPresenca);
+  if (existing) existing.status = status;
+  else data.presenca.push({ alunoId, data: dataPresenca, status, obs: '' });
+  renderPresenca();
+}
+
+function salvarPresenca() {
+  const dataPresenca = document.getElementById('presencaData').value;
+  data.presenca.forEach(p => {
+    if (p.data === dataPresenca) {
+      const obsInput = document.getElementById('obs-' + p.alunoId);
+      if (obsInput) p.obs = obsInput.value;
+    }
+  });
+  saveData(); showToast('Presença salva com sucesso!');
+}
+
+function gerarRelatorioFrequencia() {
+  const inicio = document.getElementById('relInicio').value;
+  const fim = document.getElementById('relFim').value;
+  const turma = document.getElementById('relTurma').value;
+  if (!inicio || !fim) { showToast('Selecione o período do relatório!', 'error'); return; }
+  let alunos = data.alunos;
+  if (turma) alunos = alunos.filter(a => a.turma === turma);
+  document.getElementById('relatorioFrequencia').innerHTML = alunos.length ? alunos.map(a => {
+    const regs = data.presenca.filter(p => p.alunoId === a.id && p.data >= inicio && p.data <= fim);
+    const presentes = regs.filter(p => p.status === 'presente').length;
+    const total = regs.length;
+    const freq = total > 0 ? Math.round((presentes / total) * 100) : 0;
+    return '<div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">' + getAvatar(a) +
+      '<div class="flex-1"><p class="text-sm font-medium text-gray-800">' + a.nome + ' ' + a.sobrenome + ' <span class="text-xs text-gray-500">(' + a.turma + ')</span></p><p class="text-xs text-gray-500">' + presentes + '/' + total + ' aulas • ' + (total - presentes) + ' falta(s)</p></div>' +
+      '<div class="w-32"><div class="flex justify-between text-xs mb-1"><span class="text-gray-600">' + freq + '%</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="progress-bar h-2" style="width:' + freq + '%"></div></div></div></div>';
+  }).join('') : '<p class="text-sm text-gray-400">Nenhum aluno encontrado.</p>';
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  document.getElementById('statTotalAlunos').textContent = data.alunos.length;
+  const totalEntradas = data.pagamentos.filter(p => p.status === 'pago').reduce((s, p) => s + p.valor, 0);
+  const totalSaidas = data.despesas.reduce((s, d) => s + d.valor, 0);
+  document.getElementById('statSaldo').textContent = formatCurrency(totalEntradas - totalSaidas);
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  document.getElementById('statPagamentos').textContent = data.pagamentos.filter(p => p.data.startsWith(currentMonth) && p.status === 'pago').length;
+  const currentMonthNum = new Date().getMonth();
+  document.getElementById('statAniversarios').textContent = data.alunos.filter(a => a.nascimento && new Date(a.nascimento + 'T00:00:00').getMonth() === currentMonthNum).length;
+  renderDashboardCharts(); renderUpcomingBirthdays(); renderRecentPayments();
+}
+
+function renderDashboardCharts() {
+  const ctx1 = document.getElementById('chartReceitasDespesas').getContext('2d');
+  if (chartInstances.rd) chartInstances.rd.destroy();
+  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
+  const year = new Date().getFullYear();
+  const entradas = months.map((_, i) => data.pagamentos.filter(p => p.status === 'pago' && p.data.startsWith(year + '-' + String(i + 1).padStart(2, '0'))).reduce((s, p) => s + p.valor, 0));
+  const saidas = months.map((_, i) => data.despesas.filter(d => d.data.startsWith(year + '-' + String(i + 1).padStart(2, '0'))).reduce((s, d) => s + d.valor, 0));
+  chartInstances.rd = new Chart(ctx1, {
+    type: 'line',
+    data: { labels: months, datasets: [
+      { label: 'Entradas', data: entradas, borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 },
+      { label: 'Saídas', data: saidas, borderColor: '#E31E24', backgroundColor: 'rgba(227,30,36,0.1)', fill: true, tension: 0.4 }
+    ]},
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { grid: { color: chartGridColor() } } } }
+  });
+
+  const ctx2 = document.getElementById('chartTurmas').getContext('2d');
+  if (chartInstances.turmas) chartInstances.turmas.destroy();
+  const turmas = {};
+  data.alunos.forEach(a => { turmas[a.turma] = (turmas[a.turma] || 0) + 1; });
+  chartInstances.turmas = new Chart(ctx2, {
+    type: 'bar',
+    data: { labels: Object.keys(turmas), datasets: [{ label: 'Alunos', data: Object.values(turmas), backgroundColor: ['#E31E24', '#1E3A8A', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'] }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: chartGridColor() } } } }
+  });
+}
+
+function renderUpcomingBirthdays() {
+  const today = new Date();
+  const upcoming = data.alunos.filter(a => a.nascimento).map(a => {
+    const d = new Date(a.nascimento + 'T00:00:00');
+    const nextBday = new Date(today.getFullYear(), d.getMonth(), d.getDate());
+    if (nextBday < today) nextBday.setFullYear(today.getFullYear() + 1);
+    return Object.assign({}, a, { nextBday, daysUntil: Math.ceil((nextBday - today) / 86400000) });
+  }).sort((a, b) => a.daysUntil - b.daysUntil).slice(0, 5);
+  document.getElementById('upcomingBirthdays').innerHTML = upcoming.length ? upcoming.map(a => '<div class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg">' + getAvatar(a) +
+    '<div class="flex-1"><p class="text-sm font-medium text-gray-800">' + a.nome + ' ' + a.sobrenome + '</p><p class="text-xs text-gray-500">' + a.turma + '</p></div>' +
+    '<span class="text-xs font-medium ' + (a.daysUntil === 0 ? 'text-red-600 bg-red-50' : 'text-blue-600 bg-blue-50') + ' px-2 py-1 rounded-full">' + (a.daysUntil === 0 ? '🎂 Hoje!' : a.daysUntil + ' dias') + '</span></div>').join('') : '<p class="text-sm text-gray-400 text-center py-4">Nenhum aniversário próximo</p>';
+}
+
+function renderRecentPayments() {
+  const recent = [...data.pagamentos].sort((a, b) => b.data.localeCompare(a.data)).slice(0, 5);
+  document.getElementById('recentPayments').innerHTML = recent.length ? recent.map(p => {
+    const aluno = data.alunos.find(a => a.id === p.alunoId);
+    return '<div class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg"><div class="w-10 h-10 rounded-full ' + (p.status === 'pago' ? 'bg-green-100' : 'bg-yellow-100') + ' flex items-center justify-center"><i class="fas ' + (p.status === 'pago' ? 'fa-check text-green-600' : 'fa-clock text-yellow-600') + '"></i></div><div class="flex-1"><p class="text-sm font-medium text-gray-800">' + (aluno ? aluno.nome + ' ' + aluno.sobrenome : '-') + '</p><p class="text-xs text-gray-500">' + formatDate(p.data) + '</p></div><span class="text-sm font-bold ' + (p.status === 'pago' ? 'text-green-600' : 'text-yellow-600') + '">' + formatCurrency(p.valor) + '</span></div>';
+  }).join('') : '<p class="text-sm text-gray-400 text-center py-4">Nenhum pagamento registrado</p>';
+}
+
+// ===== BACKUP / CONFIG =====
+function exportBackup() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'dec_backup_' + todayStr() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup JSON exportado!');
+}
+
+function importBackup(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try { data = JSON.parse(e.target.result); saveData(); renderAll(); showToast('Dados importados com sucesso!'); }
+      catch (err) { showToast('Erro ao importar arquivo!', 'error'); }
+    };
+    reader.readAsText(file);
+  }
+  event.target.value = '';
+}
+
+function apagarTudo() {
+  showConfirm('⚠️ ATENÇÃO: Apagar Tudo', 'Isso apagará TODOS os dados (alunos, pagamentos, despesas, presença e alertas). Deseja continuar?', function() {
+    showConfirm('Confirmação Final', 'Tem certeza absoluta? Esta ação não pode ser desfeita.', function() {
+      data = { alunos: [], pagamentos: [], despesas: [], presenca: [], alertas: [] };
+      saveData(); renderAll(); showToast('Todos os dados foram apagados!');
+    }, { okText: 'Sim, apagar tudo', iconClass: 'fa-exclamation-triangle text-red-600', iconBg: 'bg-red-100' });
+  }, { okText: 'Continuar', iconClass: 'fa-exclamation-triangle text-red-600', iconBg: 'bg-red-100' });
+}
+
+// ===== EXPORT =====
+function exportRelatorioPDF() {
+  const jsPDF = window.jspdf.jsPDF;
+  const doc = new jsPDF();
+  doc.setFontSize(18); doc.setTextColor(227, 30, 36);
+  doc.text('DEC - Relatório Financeiro', 20, 20);
+  doc.setFontSize(12); doc.setTextColor(0, 0, 0);
+  const totalEntradas = data.pagamentos.filter(p => p.status === 'pago').reduce((s, p) => s + p.valor, 0);
+  const totalSaidas = data.despesas.reduce((s, d) => s + d.valor, 0);
+  doc.text('Total Entradas: R$ ' + totalEntradas.toFixed(2), 20, 40);
+  doc.text('Total Saídas: R$ ' + totalSaidas.toFixed(2), 20, 50);
+  doc.text('Saldo: R$ ' + (totalEntradas - totalSaidas).toFixed(2), 20, 60);
+  doc.text('Movimentações:', 20, 80);
+  let y = 90;
+  data.pagamentos.filter(p => p.status === 'pago').forEach(p => {
+    const aluno = data.alunos.find(a => a.id === p.alunoId);
+    doc.text('+ R$ ' + p.valor.toFixed(2) + ' - ' + (aluno ? aluno.nome + ' ' + aluno.sobrenome : '') + ' (' + formatDate(p.data) + ')', 20, y); y += 8;
+  });
+  data.despesas.forEach(d => { doc.text('- R$ ' + d.valor.toFixed(2) + ' - ' + d.descricao + ' (' + formatDate(d.data) + ')', 20, y); y += 8; });
+  doc.save('relatorio_financeiro.pdf');
+  showToast('PDF exportado!');
+}
+
+function exportRelatorioExcel() {
+  const wb = XLSX.utils.book_new();
+  const movs = [
+    ...data.pagamentos.filter(p => p.status === 'pago').map(p => {
+      const aluno = data.alunos.find(a => a.id === p.alunoId);
+      return { Data: formatDate(p.data), Descricao: 'Pagamento - ' + (aluno ? aluno.nome + ' ' + aluno.sobrenome : ''), Tipo: 'Entrada', Valor: p.valor };
+    }),
+    ...data.despesas.map(d => ({ Data: formatDate(d.data), Descricao: d.descricao, Tipo: 'Saída', Valor: d.valor }))
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(movs), 'Financeiro');
+  XLSX.writeFile(wb, 'relatorio_financeiro.xlsx');
+  showToast('Excel exportado!');
+}
+
+function exportPresencaPDF() {
+  const jsPDF = window.jspdf.jsPDF;
+  const doc = new jsPDF();
+  const dataPresenca = document.getElementById('presencaData').value;
+  doc.setFontSize(18); doc.setTextColor(227, 30, 36);
+  doc.text('DEC - Ata de Presença', 20, 20);
+  doc.setFontSize(12); doc.setTextColor(0, 0, 0);
+  doc.text('Data: ' + formatDate(dataPresenca), 20, 35);
+  let y = 50;
+  data.alunos.forEach(a => {
+    const reg = data.presenca.find(p => p.alunoId === a.id && p.data === dataPresenca);
+    doc.text(a.nome + ' ' + a.sobrenome + ' - ' + a.turma + ' - ' + (reg && reg.status === 'presente' ? 'Presente' : reg && reg.status === 'faltou' ? 'Faltou' : 'Não registrado'), 20, y); y += 9;
+  });
+  doc.save('ata_presenca_' + dataPresenca + '.pdf');
+  showToast('PDF exportado!');
+}
+
+function exportPresencaExcel() {
+  const wb = XLSX.utils.book_new();
+  const dataPresenca = document.getElementById('presencaData').value;
+  const rows = data.alunos.map(a => {
+    const reg = data.presenca.find(p => p.alunoId === a.id && p.data === dataPresenca);
+    return { Aluno: a.nome + ' ' + a.sobrenome, Turma: a.turma, Status: reg ? reg.status : 'Não registrado', Observacao: reg && reg.obs ? reg.obs : '' };
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Presença');
+  XLSX.writeFile(wb, 'ata_presenca_' + dataPresenca + '.xlsx');
+  showToast('Excel exportado!');
+}
+
+// ===== UTILS =====
+function formatCurrency(value) { return 'R$ ' + value.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+function formatDate(dateStr) { if (!dateStr) return '-'; const p = dateStr.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+function showToast(msg, type) {
+  const toast = document.getElementById('toast');
+  const icon = document.getElementById('toastIcon');
+  document.getElementById('toastMsg').textContent = msg;
+  icon.className = type === 'error' ? 'fas fa-exclamation-circle text-red-400' : 'fas fa-check-circle text-green-400';
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 3500);
+}
+
+function renderAll() {
+  renderAlunos(); renderPagamentos(); renderDashboard(); renderFinanceiro(); renderCalendar(); renderPresenca(); updateNotifications();
+}
+
+document.querySelectorAll('.modal-overlay').forEach(modal => {
+  modal.addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
+});
+
+init();
+</script>
+</body>
+</html>
